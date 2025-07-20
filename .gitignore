@@ -1,0 +1,30 @@
+# Node modules
+node_modules/
+
+# Vite cache
+.vite/
+
+# SvelteKit (if you ever add it)
+.svelte-kit/
+
+# Build output
+dist/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# VSCode settings (optional)
+.vscode/
+
+# macOS metadata
+*.DS_Store
