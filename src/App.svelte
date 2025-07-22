@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { Application, Assets, Sprite, Container } from "pixi.js";
+  import { Application, Assets, Sprite, Container, Graphics } from "pixi.js";
 
   let canvas;
   let app;
@@ -45,8 +45,20 @@
       reelContainers[col] = reel;
     }
 
-    grid.x = (app.screen.width - COLS * cellSize) / 2;
-    grid.y = (app.screen.height - ROWS * cellSize) / 2;
+    // Align perfectly with overlay (optional)
+    grid.x = 642;
+    grid.y = 105;
+
+    // Create a mask to show only 5x5 visible area
+    const mask = new Graphics();
+    mask.beginFill(0xffffff);
+    mask.drawRect(0, 0, COLS * cellSize, ROWS * cellSize);
+    mask.endFill();
+    mask.x = grid.x - 60;
+    mask.y = grid.y - 60;
+    app.stage.addChild(mask);
+
+    grid.mask = mask;
     app.stage.addChild(grid);
   }
 
@@ -157,7 +169,7 @@
   <!-- 🖼️ Frame Overlay -->
   <div
     class="absolute border-4 border-white rounded-lg pointer-events-none"
-    style="left: 588px; top: 85px; width: 620px; height: 620px;"
+    style="left: 575px; top: 45px; width: 628px; height: 620px;"
   ></div>
 </div>
 
