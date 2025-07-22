@@ -4,7 +4,7 @@
 
   let canvas;
   let app;
-  const COLS = 5;
+  const COLS = 6;
   const ROWS = 5;
   const cellSize = 124;
   const textures = {};
@@ -49,7 +49,7 @@
     grid.x = 642;
     grid.y = 105;
 
-    // Create a mask to show only 5x5 visible area
+    // Create a mask to show only 5x6 visible area
     const mask = new Graphics();
     mask.beginFill(0xffffff);
     mask.drawRect(0, 0, COLS * cellSize, ROWS * cellSize);
@@ -169,7 +169,7 @@
   <!-- 🖼️ Frame Overlay -->
   <div
     class="absolute border-4 border-white rounded-lg pointer-events-none"
-    style="left: 575px; top: 45px; width: 628px; height: 620px;"
+    style="left: 575px; top: 45px; width: 753px; height: 620px;"
   ></div>
 </div>
 
