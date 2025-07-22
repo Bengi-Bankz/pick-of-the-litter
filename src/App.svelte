@@ -4,8 +4,10 @@
 
   let canvas;
   let app;
-  const COLS = 6;
+  const COLS = 5;
   const ROWS = 5;
+  const TOTAL_COLS = 6; // includes god reel
+
   const cellSize = 124;
   const textures = {};
   const symbols = ["10", "jack", "queen", "king", "ace", "scatter"];
@@ -13,12 +15,42 @@
   const expandedOverlays = []; // ✅ TRACK OVERLAYS TO REMOVE ON SPIN
 
   let grid;
+  let godReel;
 
   async function loadSymbols() {
-    for (const name of symbols) {
-      textures[name] = await Assets.load(`/${name}.png`);
+    const allSymbols = [
+      "10",
+      "jack",
+      "queen",
+      "king",
+      "ace",
+      "scatter",
+      "reelexpanded",
+      "odinreel",
+      "heimdallreel",
+      "freyareel",
+      "thorreel",
+      "idunreel",
+      "xreel1",
+      "xreel2",
+      "xreel3",
+    ];
+
+    let loaded = 0;
+    let failed = 0;
+
+    for (const name of allSymbols) {
+      try {
+        textures[name] = await Assets.load(`/${name}.png`);
+        console.log(`✅ Loaded: ${name}.png`);
+        loaded++;
+      } catch (e) {
+        console.warn(`❌ Failed to load: ${name}.png`, e);
+        failed++;
+      }
     }
-    textures["reelexpanded"] = await Assets.load("/reelexpanded.png");
+
+    console.log(`🧩 Symbols loaded: ${loaded}, Failed: ${failed}`);
   }
 
   function createReel(col) {
@@ -34,7 +66,8 @@
       sprite.width = sprite.height = cellSize;
       sprite.x = 0;
       sprite.y = i * cellSize;
-      sprite.name = key;
+      sprite.label = key;
+
       reel.addChild(sprite);
     }
 
@@ -50,12 +83,45 @@
       reelContainers[col] = reel;
     }
 
+    // ✅ Add this here — God Reel (column 5)
+    godReel = new Container();
+    godReel.x = COLS * cellSize + 65; // adjust '20' as needed
+
+    godReel.y = 0;
+
+    const godSymbols = [
+      "xreel1",
+      "xreel2",
+      "xreel3",
+      "odinreel",
+      "heimdallreel",
+      "freyareel",
+      "thorreel",
+      "idunreel",
+    ];
+
+    for (let i = 0; i < 20; i++) {
+      const key = godSymbols[Math.floor(Math.random() * godSymbols.length)];
+      const sprite = new Sprite(textures[key]);
+      sprite.anchor.set(0.5);
+      sprite.width = 124;
+      sprite.height = 620;
+      sprite.x = 0;
+      sprite.y = i * 620;
+      sprite.name = key;
+      godReel.addChild(sprite);
+    }
+
+    godReel.visible = true;
+    grid.addChild(godReel);
+
     grid.x = 440;
     grid.y = 195;
 
     const mask = new Graphics();
     mask.fill({ color: 0xffffff });
-    mask.rect(0, 0, COLS * cellSize, ROWS * cellSize);
+    mask.rect(0, 0, TOTAL_COLS * cellSize, ROWS * cellSize);
+
     mask.fill();
     mask.x = grid.x - 0;
     mask.y = grid.y - 0;
