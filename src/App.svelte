@@ -10,6 +10,8 @@
   const textures = {};
   const symbols = ["10", "jack", "queen", "king", "ace", "scatter"];
   const reelContainers = [];
+  const expandedOverlays = []; // ✅ TRACK OVERLAYS TO REMOVE ON SPIN
+
   let grid;
 
   async function loadSymbols() {
@@ -123,10 +125,14 @@
   function triggerScatterAnimations() {
     for (let col = 0; col < COLS; col++) {
       const reel = reelContainers[col];
-      for (let i = 5; i < 10; i++) {
-        const sprite = reel.children[i];
-        if (sprite && sprite.name === "scatter") {
-          pulseAndExpand(sprite, col);
+
+      for (const sprite of reel.children) {
+        if (
+          sprite.name === "scatter" &&
+          sprite.y >= 0 &&
+          sprite.y + cellSize <= cellSize * ROWS
+        ) {
+          pulseAndExpand(sprite, col); // ✅ only first visible scatter per reel
           break;
         }
       }
@@ -161,21 +167,28 @@
 
   function expandReel(col) {
     const expanded = new Sprite(textures["reelexpanded"]);
-    expanded.x = col * cellSize; // ✅ Corrected (local to grid)
-    expanded.y = 0;
+    expanded.anchor.set(0.5); // ✅ center aligned
+    expanded.x = col * cellSize + cellSize / 2;
+    expanded.y = (cellSize * ROWS) / 2;
     expanded.width = cellSize;
     expanded.height = cellSize * ROWS;
     expanded.alpha = 0;
     expanded.zIndex = 100;
 
     grid.addChild(expanded);
+    expandedOverlays.push(expanded); // ✅ track it
 
     app.ticker.add(() => {
-      if (expanded.alpha < 1) expanded.alpha += 0.5;
+      if (expanded.alpha < 1) expanded.alpha += 0.05;
     });
   }
-
   function handleSpin() {
+    // ✅ Remove previous overlays
+    for (const overlay of expandedOverlays) {
+      overlay.destroy(); // or: grid.removeChild(overlay)
+    }
+    expandedOverlays.length = 0;
+
     spinReels();
   }
 
@@ -214,15 +227,15 @@
   </div>
 
   <div
-    class="absolute pointer-events-auto text-white text-sm bg-gray-800 px-3 py-2 rounded"
-    style="left: 0px; top: 0px; width: 251px; height: 88px;"
+    class="absolute pointer-events-auto text-white text-lg bg-blue-800 px-12 py-2 rounded"
+    style="left: 20px; top: 20px; width: 175px; height: 48px;"
   >
     ☰ MENU
   </div>
 
   <button
     on:click={handleSpin}
-    class="absolute pointer-events-auto bg-green-500 hover:bg-green-600 text-white font-bold rounded-full shadow-lg text-2xl"
+    class="absolute pointer-events-auto bg-green-500 hover:bg-blue-800 text-white font-bold rounded-full shadow-lg text-2xl"
     style="left: 1446px; top: 452px; width: 100px; height: 100px;"
   >
     SPIN
