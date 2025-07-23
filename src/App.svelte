@@ -1,6 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { Application, Assets, Sprite, Container, Graphics } from "pixi.js";
+  import { GlowFilter } from "@pixi/filter-glow";
 
   let canvas;
   let app;
@@ -16,7 +17,7 @@
 
   let grid;
   let godReel;
-
+  let reelsFinished = 0;
   async function loadSymbols() {
     const allSymbols = [
       "10",
@@ -132,6 +133,8 @@
   }
 
   function spinReels() {
+    reelsFinished = 0;
+
     for (let col = 0; col < COLS; col++) {
       const reel = reelContainers[col];
       const spinTime = 1000 + col * 300;
@@ -161,9 +164,10 @@
 
       animate();
     }
+
+    spinGodReel(); // 🔁 Trigger god reel spin too
   }
 
-  let reelsFinished = 0;
   function finalizeReel(col) {
     const reel = reelContainers[col];
     reel.removeChildren();
@@ -188,6 +192,121 @@
     }
   }
 
+  // 🌀 Animate God Reel
+  function spinGodReel() {
+    if (!godReel || !godReel.children?.length) return;
+
+    const spinDuration = 1000;
+    const scrollSpeed = 100; // fast scroll for god reel
+    const startTime = Date.now();
+
+    function animate() {
+      godReel.children.forEach((sprite) => {
+        sprite.y += scrollSpeed;
+        if (sprite.y > 620 * godReel.children.length) {
+          sprite.y -= 620 * godReel.children.length;
+        }
+      });
+
+      if (Date.now() - startTime < spinDuration) {
+        requestAnimationFrame(animate);
+      } else {
+        finalizeGodReel();
+      }
+    }
+
+    animate();
+  }
+
+  function finalizeGodReel() {
+    const centerY = 620; // center of the reel if grid height = 124 * 5 = 620
+    const symbolHeight = 620;
+    const nudgeStep = 10;
+
+    // Find symbol closest to the center line
+    const closest = godReel.children.reduce((a, b) => {
+      return Math.abs(a.y - centerY) < Math.abs(b.y - centerY) ? a : b;
+    });
+
+    const symbol = closest;
+    let nudges = 0;
+
+    function nudge() {
+      const delta = symbol.y - centerY;
+
+      if (Math.abs(delta) > nudgeStep) {
+        const step = Math.sign(delta) * nudgeStep;
+
+        // Move all symbols equally so alignment is maintained
+        godReel.children.forEach((s) => {
+          s.y -= step;
+        });
+
+        nudges++;
+        requestAnimationFrame(nudge);
+      } else {
+        const correction = symbol.y - centerY;
+
+        godReel.children.forEach((s) => {
+          s.y -= correction;
+        });
+
+        symbol.y = centerY;
+        console.log(
+          `✅ God Reel Nudged to Center: ${symbol.name} (${nudges}x multiplier)`,
+        );
+      }
+    }
+
+    nudge();
+  }
+  function pulseAndExpand(sprite, col) {
+    const originalScale = sprite.scale.x;
+    const pulseScale = 1.4;
+    const totalFrames = 16;
+    let frame = 0;
+
+    // 🎵 Play sound
+    const sound = new Audio("/sfx/scatter.mp3"); // Adjust path if needed
+    sound.volume = 0.7;
+    sound.play();
+
+    sprite.filters = [
+      new GlowFilter({
+        distance: 15,
+        outerStrength: 2,
+        innerStrength: 1,
+        color: 0xffcc00,
+        quality: 0.5,
+      }),
+    ];
+
+    function animate() {
+      const progress = frame / totalFrames;
+      if (progress < 0.5) {
+        const scale =
+          originalScale + (pulseScale - originalScale) * (progress * 2);
+        sprite.scale.set(scale);
+      } else {
+        const scale =
+          pulseScale - (pulseScale - originalScale) * ((progress - 0.5) * 2);
+        sprite.scale.set(scale);
+      }
+
+      frame++;
+      if (frame <= totalFrames) {
+        requestAnimationFrame(animate);
+      } else {
+        sprite.scale.set(originalScale);
+        sprite.filters = []; // 🔄 Remove glow
+        expandReel(col); // 🧩 Call your existing function
+      }
+    }
+
+    animate();
+  }
+
+  // ✨ Pulse + Expand any visible scatter
   function triggerScatterAnimations() {
     for (let col = 0; col < COLS; col++) {
       const reel = reelContainers[col];
@@ -203,32 +322,6 @@
         }
       }
     }
-  }
-
-  function pulseAndExpand(sprite, col) {
-    let pulseCount = 0;
-    let scaleDir = 1;
-
-    const pulse = () => {
-      sprite.scale.x += 0.03 * scaleDir;
-      sprite.scale.y += 0.03 * scaleDir;
-
-      if (sprite.scale.x >= 1) scaleDir = -1;
-      if (sprite.scale.x <= 1 && scaleDir === -1) {
-        pulseCount++;
-        if (pulseCount < 2) {
-          scaleDir = 1;
-        } else {
-          sprite.scale.set(1);
-          expandReel(col);
-          return;
-        }
-      }
-
-      requestAnimationFrame(pulse);
-    };
-
-    pulse();
   }
 
   function expandReel(col) {
